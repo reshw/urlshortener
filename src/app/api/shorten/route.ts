@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { customAlphabet } from "nanoid";
 import { supabase } from "@/lib/supabase";
 
-const generateCode = customAlphabet(
-  "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ",
-  6
-);
+// Lowercase + digits only: mixed case (s/S, z/Z, c/C, o/O, ...) reads
+// identically in many fonts, so photos/screenshots and OCR text
+// extraction (e.g. iOS Live Text) frequently mangle the case.
+// Also drop 0/o and 1/l/i to avoid shape confusion.
+const generateCode = customAlphabet("23456789abcdefghjkmnpqrstuvwxyz", 6);
 
 const RESERVED_CODES = new Set(["api", "favicon.ico"]);
 

@@ -10,7 +10,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("links")
     .select("target_url")
-    .eq("code", code)
+    .eq("code", code.toLowerCase())
     .maybeSingle();
 
   if (error || !data) {
