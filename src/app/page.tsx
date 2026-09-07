@@ -1,69 +1,90 @@
-import Image from "next/image";
+"use client";
+
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 
+function NotFoundNotice() {
+  const searchParams = useSearchParams();
+  if (!searchParams.get("notfound")) return null;
+  return <p className={styles.notice}>존재하지 않는 링크입니다.</p>;
+}
+
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setShortUrl(null);
+    setCopied(false);
+
+    try {
+      const res = await fetch("/api/shorten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "알 수 없는 오류가 발생했습니다.");
+        return;
+      }
+
+      setShortUrl(`${window.location.origin}/${data.code}`);
+    } catch {
+      setError("요청에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!shortUrl) return;
+    await navigator.clipboard.writeText(shortUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className={styles.main}>
+      <h1 className={styles.title}>URL Shortener</h1>
+      <Suspense fallback={null}>
+        <NotFoundNotice />
+      </Suspense>
+
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="https://example.com/very/long/link"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          required
         />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
+        <button className={styles.button} type="submit" disabled={loading}>
+          {loading ? "생성 중..." : "단축하기"}
+        </button>
+      </form>
+
+      {error && <p className={styles.error}>{error}</p>}
+
+      {shortUrl && (
+        <div className={styles.result}>
+          <a href={shortUrl} target="_blank" rel="noreferrer">
+            {shortUrl}
           </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          <button className={styles.copyButton} onClick={handleCopy}>
+            {copied ? "복사됨!" : "복사"}
+          </button>
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
