@@ -71,4 +71,29 @@
   color: #111827;
   cursor: pointer;
   white-space: nowrap;
+  transition: transform 0.1s ease, background 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.copyButton:active {
+  transform: scale(0.92);
+}
+
+.copyButtonSuccess {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: white;
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
 }

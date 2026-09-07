@@ -47,9 +47,33 @@ export default function Home() {
 
   async function handleCopy() {
     if (!shortUrl) return;
-    await navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      ok = true;
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = shortUrl;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        ok = document.execCommand("copy");
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(textarea);
+    }
+
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } else {
+      setError("복사에 실패했습니다. 직접 선택해서 복사해주세요.");
+    }
   }
 
   return (
@@ -80,8 +104,11 @@ export default function Home() {
           <a href={shortUrl} target="_blank" rel="noreferrer">
             {shortUrl}
           </a>
-          <button className={styles.copyButton} onClick={handleCopy}>
-            {copied ? "복사됨!" : "복사"}
+          <button
+            className={`${styles.copyButton} ${copied ? styles.copyButtonSuccess : ""}`}
+            onClick={handleCopy}
+          >
+            {copied ? "✓ 복사됨" : "복사"}
           </button>
         </div>
       )}
